@@ -75,7 +75,12 @@
     border: 1px solid #ddd;
     border-collapse: collapse;
   }
-  tr:hover {
+  #dialog {
+    width:100%;
+    border: 1px solid #ddd;
+    border-collapse: collapse;
+  }
+  #playlist-table tr:hover {
     background-color: #ffff99;
   }
   #playlist-table th {
@@ -84,6 +89,20 @@
     text-align: left;
     background-color: #4CAF50;
     color: white;
+  }
+  #dialog th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #4CAF50;
+    color: white;
+  }
+  table {
+  border-spacing: 50px 0;
+  }
+
+  td {
+    padding: 10px 0;
   }
   </style>
   <script id="oauth-template" type="text/x-handlebars-template">
@@ -214,8 +233,6 @@
                     } while (offset <= tracksCount);
                   });
                   $(document).on("click", "#search-gig", function() {
-                    //console.log($('#selector-artist').val());
-                    //console.log($('#city').val());
                     getGigsByArtistAndCity(
                       $('#selector-artist').val(),
                       $('#city').val()
@@ -288,18 +305,49 @@
               return;
             }
             let events = response._embedded.events;
-            console.log(events);
             $("#dialog").dialog({
               autoOpen : false,
               title: 'Upcoming gigs for ' + artist,
               draggable: false,
               modal : false,
-              height: 400,
-              width: 700,
+              height: 700,
+              width: 1100,
               show : "blind",
               hide : "blind"
             });
-              $("#dialog").dialog("open");
+            let html = '';
+            for(let i = 0; i < events.length; i++){
+              try {
+                let event = events[i];
+
+                let gigName = event.name;
+                let artistsPerforming = '';
+                let venues = '';
+                let date = event.dates.start.localDate + ', at ' + event.dates.start.localTime;
+                let status = event.dates.status.code;
+                let linkToTickets = event.url;
+
+                for(let j = 0; j < event._embedded.attractions.length; j++){
+                  let band = event._embedded.attractions[j];
+
+                  artistsPerforming += band.name + (j + 1 == event._embedded.attractions.length ? '' : ', ');
+                }
+
+                for(let j = 0; j < event._embedded.venues.length; j++){
+                  let venue = event._embedded.venues[j];
+                  venues += venue.name + ', ' + venue.address.line1 + ', ' + venue.city.name + ', ' + venue.country.name +
+                    (j + 1 == event._embedded.attractions.length ? '' : ',');
+                }
+                html += '<tr><td>' + gigName + '</td><td>' + artistsPerforming + '</td><td>' +
+                  venues + '</td><td>' + date + '</td><td>' + status + '</td><td>' +
+                  '<button id="ticketRedirect" class="btn btn-primary" onClick="window.open(\'' + linkToTickets + '\',\'_blank\')">Buy tickets</button> ';
+              } catch (e){
+                continue;
+              }
+            }
+            $('#popup-gigs-table tbody tr').remove();
+            $('#popup-gigs-table').append(html);
+            $("#dialog").dialog("open");
             },
           error: function (xhr, ajaxOptions, thrownError){
             console.log('error when calling timemaster endpoint');
@@ -312,11 +360,12 @@
       <table id="popup-gigs-table">
         <thead>
           <tr>
-            <th>Event name</th>
-            <th>Artists performing</th>
-            <th>Venue</th>
-            <th>Date</th>
-            <th>Tickets</th>
+            <th> Event name </th>
+            <th> Artists performing </th>
+            <th> Venue </th>
+            <th> Date </th>
+            <th> Status </th>
+            <th> Tickets </th>
           </tr>
         </thead>
         <tbody>
