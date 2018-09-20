@@ -1,0 +1,10 @@
+version: '3'
+services:
+  gigfinder:
+    build: ./gigfinder
+    working_dir: /home/node/app
+    volumes:
+      - ./gigfinder:/home/node/app
+    ports:
+      - 8888:8888
+    command: "node app.js"
