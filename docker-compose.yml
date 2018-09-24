@@ -6,5 +6,5 @@ services:
     volumes:
       - ./gigfinder:/home/node/app
     ports:
-      - 8888:8888
-    command: "node app.js"
+            - 5000:5000
+    command: "npm start"

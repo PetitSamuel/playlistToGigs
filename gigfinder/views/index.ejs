@@ -1,0 +1,401 @@
+<!doctype html>
+<html>
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<style type="text/css">
+  #header-global {
+    text-align: center;
+    vertical-align: middle;
+  }
+  #login-button {
+    text-align: center;
+  }
+  #login, #loggedin {
+    display: none;
+  }
+  .text-overflow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 500px;
+  }
+  #dialog {
+    display: none;
+  }
+  #playlist-table {
+    width:100%;
+    border: 1px solid #ddd;
+    border-collapse: collapse;
+  }
+  #dialog {
+    width:100%;
+    border: 1px solid #ddd;
+    border-collapse: collapse;
+  }
+  #playlist-table tr:hover {
+    background-color: #ffff99;
+  }
+  #playlist-table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #4CAF50;
+    color: white;
+  }
+  #dialog th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #4CAF50;
+    color: white;
+  }
+  button {
+    align-self: auto;
+  }
+  table {
+    border-spacing: 50px 0;
+  }
+  td {
+    padding: 10px 0;
+  }
+</style>
+<head>
+  <title>Spotify to gigs!</title>
+</head>
+<h2 id="header-global">Find out when your favorite artists are playing near you!</h2>
+<body>
+  <div class="container">
+    <div id="login">
+      <h3>Start by login into your spotify account:</h3>
+      <div id="login-button">
+      <button class="btn btn-primary">Log in with Spotify!</button>
+      </div>
+    </div>
+    <div id="loggedin">
+      <div id="user-profile">
+      </div>
+      <div id="oauth">
+      </div>
+    </div>
+  </div>
+
+  <script id="user-profile-template" type="text/x-handlebars-template">
+    <h1>Welcome {{display_name}}!</h1>
+    <h3 id="playlist-table-header">Your playlists</h3>
+    <table id="playlist-table">
+      <thead>
+        <tr>
+          <th>Playlist Name</th>
+          <th>Nb of tracks</th>
+          <th>Playlist ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- filled by js -->
+      </tbody>
+    </table>
+
+    <div id="findGigs" class="findGigs">
+      City(optional)<input type="text" id="city" name="city">
+      <select id="selector-artist" class="selector-artist">
+      </select>
+      <button id="search-gig" class="btn btn-primary">Find gigs!</button>
+    </div>
+
+<!-- Popup, triggered by js/jquery -->
+    <div id="dialog" title="">
+      <table id="popup-gigs-table">
+        <thead>
+        <tr>
+          <th> Event name </th>
+          <th> Artists performing </th>
+          <th> Venue </th>
+          <th> Date </th>
+          <th> Status </th>
+          <th> Tickets </th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </script>
+
+  <script id="oauth-template" type="text/x-handlebars-template">
+    <h2>oAuth info</h2>
+    <dl class="dl-horizontal">
+      <dt>Access token</dt><dd class="text-overflow">{{access_token}}</dd>
+    </dl>
+  </script>
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+
+  <script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
+
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css" />
+  <script>
+  (function() {
+    var allArtists = new Array();
+    var stateKey = 'spotify_auth_state';
+
+    /**
+    * Obtains parameters from the hash of the URL
+    * @return Object
+    */
+    function getHashParams() {
+      var hashParams = {};
+      var e, r = /([^&;=]+)=?([^&;]*)/g,
+      q = window.location.hash.substring(1);
+      while ( e = r.exec(q)) {
+        hashParams[e[1]] = decodeURIComponent(e[2]);
+      }
+      return hashParams;
+    }
+
+    /**
+    * Generates a random string containing numbers and letters
+    * @param  {number} length The length of the string
+    * @return {string} The generated string
+    */
+    function generateRandomString(length) {
+      var text = '';
+      var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+      for (var i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+      }
+      return text;
+    };
+
+    var userProfileSource = document.getElementById('user-profile-template').innerHTML,
+    userProfileTemplate = Handlebars.compile(userProfileSource),
+    userProfilePlaceholder = document.getElementById('user-profile');
+
+    oauthSource = document.getElementById('oauth-template').innerHTML,
+    oauthTemplate = Handlebars.compile(oauthSource),
+    oauthPlaceholder = document.getElementById('oauth');
+
+    var params = getHashParams();
+
+    var access_token = params.access_token,
+    state = params.state,
+    storedState = localStorage.getItem(stateKey);
+
+    if (access_token && (state == null || state !== storedState)) {
+      alert('There was an error during the authentication');
+    } else {
+      localStorage.removeItem(stateKey);
+      if (access_token) {
+        $.ajax({
+          url: 'https://api.spotify.com/v1/me',
+          headers: {
+            'Authorization': 'Bearer ' + access_token
+          },
+          success: function(response) {
+            userProfilePlaceholder.innerHTML = userProfileTemplate(response);
+
+            $('#login').hide();
+            $('#findGigs').hide();
+            $('#loggedin').show();
+            // get the first 50 playlists
+            $.ajax({
+              url: 'https://api.spotify.com/v1/me/playlists?limit=50',
+              headers: {
+                'Authorization': 'Bearer ' + access_token
+              },
+              success: function(response) {
+                if(response.items === 0){
+                  alert('No public playlists to display!');
+                }
+                // append to table
+                var rowsAsHtml = '';
+                $.each(response.items, function (key, value) {
+                  rowsAsHtml += '<tr><td>' + value.name + '</td><td>'
+                  + value.tracks.total + '</td><td>' + value.id + '</td></tr>';
+                });
+                $('#playlist-table').append(rowsAsHtml);
+
+                // loads tracks and extract artists on button click
+                $(document).on("click", "#playlist-table tbody tr", function() {
+                  allArtists = [];
+                  var tracksCount = parseInt(this.cells[1].innerText, 10);
+                  let offset = 0;
+                  do {
+                    // get 100 tracks at a time, keep going until all tracks are loaded
+                    getTracksData(this.cells[2].innerText, offset, function (data, isFinished){
+                      for(let i = 0; i < data.length; i++){
+                        let track = data[i].track;
+                        for(let j = 0; j < track.artists.length; j++){
+                          // store artists / keep track of amount of tracks per artist
+                          let artist = track.artists[j];
+                          if(allArtists[artist.id] == null){
+                            allArtists[artist.id] = {
+                              name: artist.name,
+                              count: 1
+                            };
+                          } else {
+                            allArtists[artist.id].count++;
+                          }
+                        }
+                      }
+                      // executed when all tracks are loaded
+                      if(isFinished){
+                        // sort array by name
+                        let sortedArtists = sortAssocArrayByName(allArtists);
+                        // append artiststo dropdown selector
+                        var html = '';
+                        for(var index in sortedArtists){
+                          html += '<option value="' + sortedArtists[index].name + '">' + sortedArtists[index].name + '</option>';
+                        }
+                        $('#selector-artist').empty().append(html);
+                        $('#findGigs').show();
+                      }
+                    });
+                    offset += 100;
+                    } while (offset <= tracksCount);
+                  });
+                  // creates a request to the ticketmaster API
+                  $(document).on("click", "#search-gig", function() {
+                    getGigsByArtistAndCity(
+                      $('#selector-artist').val(),
+                      $('#city').val()
+                    );
+                  });
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                  console.log('error');
+                }
+              });
+            }
+          });
+        } else {
+          $('#login').show();
+          $('#findGigs').hide();
+          $('#loggedin').hide();
+        }
+
+        document.getElementById('login-button').addEventListener('click', function() {
+
+          var client_id = 'YOUR_CLIENT_ID'; // Your client id
+          var redirect_uri = 'http://localhost:5000'; // Your redirect uri
+
+          var state = generateRandomString(16);
+
+          localStorage.setItem(stateKey, state);
+          var scope = 'user-read-private user-read-email';
+
+          var url = 'https://accounts.spotify.com/authorize';
+          url += '?response_type=token';
+          url += '&client_id=' + encodeURIComponent(client_id);
+          url += '&scope=' + encodeURIComponent(scope);
+          url += '&redirect_uri=' + encodeURIComponent(redirect_uri);
+          url += '&state=' + encodeURIComponent(state);
+
+          window.location = url;
+        }, false);
+      }
+
+      // get 100 tracks from spotify and store them on success
+      function getTracksData (playlistID, offset = 0, callback) {
+        var params = getHashParams();
+        var access_token = params.access_token;
+
+        var limitAndOffset = '/tracks?&offset=' + offset;
+        $.ajax({
+          url: 'https://api.spotify.com/v1/playlists/' + playlistID + limitAndOffset,
+          headers: {
+            'Authorization': 'Bearer ' + access_token,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          success: function(response) {
+            callback(response.items, (offset + 100 > response.total ? true : false));
+          },
+          error: function (xhr, ajaxOptions, thrownError) {
+            console.log('an error occured');
+          }
+        });
+      }
+
+      // calls the ticketmaster endpoint to get gigs by artist name & optionally by city within a 100km range
+      function getGigsByArtistAndCity (artist, city){
+        var url = 'https://app.ticketmaster.com/discovery/v2/events.json?&format=json&';
+        var options = '&keyword=' + artist + '&radius=100&unit=km' + (city == '' ? '' : '&city=' + city);
+        var key = 'apikey=YOUR_API_KEY'
+
+        $.ajax({
+          url: url + key + options,
+          success: function (response) {
+            if(response.page.totalElements == 0){
+              alert('No upcoming gigs for ' + artist + (city == '' ? '' : ' near ' + city));
+              return;
+            }
+            let events = response._embedded.events;
+            $("#dialog").dialog({
+              autoOpen : false,
+              title: 'Upcoming gigs for ' + artist,
+              draggable: false,
+              modal : false,
+              height: 700,
+              width: 1100,
+              show : "blind",
+              hide : "blind"
+            });
+
+            //append gigs to popup
+            let html = '';
+            for(let i = 0; i < events.length; i++){
+              try {
+                let event = events[i];
+
+                let gigName = event.name;
+                let artistsPerforming = '';
+                let venues = '';
+                let date = event.dates.start.localDate + ', at ' + event.dates.start.localTime;
+                let status = event.dates.status.code;
+                let linkToTickets = event.url;
+
+                for(let j = 0; j < event._embedded.attractions.length; j++){
+                  let band = event._embedded.attractions[j];
+
+                  artistsPerforming += band.name + (j + 1 == event._embedded.attractions.length ? '' : ', ');
+                }
+
+                for(let j = 0; j < event._embedded.venues.length; j++){
+                  let venue = event._embedded.venues[j];
+                  venues += venue.name + ', ' + venue.address.line1 + ', ' + venue.city.name + ', ' + venue.country.name +
+                    (j + 1 == event._embedded.attractions.length ? '' : ',');
+                }
+                html += '<tr><td>' + gigName + '</td><td>' + artistsPerforming + '</td><td>' +
+                  venues + '</td><td>' + date + '</td><td>' + status + '</td><td>' +
+                  '<button id="ticketRedirect" class="btn btn-primary" onClick="window.open(\'' + linkToTickets + '\',\'_blank\')">Buy tickets</button> ';
+                // easy way to handle returned data with missing information
+              } catch (e){
+                continue;
+              }
+            }
+            // remove previously shown gigs and append new ones
+            $('#popup-gigs-table tbody tr').remove();
+            $('#popup-gigs-table').append(html);
+            $("#dialog").dialog("open");
+            },
+          error: function (xhr, ajaxOptions, thrownError){
+            console.log('error when calling timemaster endpoint');
+          }
+        });
+      }
+      // takes an array which uses an id as index and sorts it by name
+    function sortAssocArrayByName(obj) {
+      // push values to a new array
+      var keys = []; for(var key in obj) keys.push(obj[key]);
+      // return sorted array
+      return keys.sort(function(a,b){
+        if(a.name < b.name) return -1;
+        if(a.name > b.name) return 1;
+        return 0;
+      });
+    }
+    })();
+    </script>
+  </body>
+</html>

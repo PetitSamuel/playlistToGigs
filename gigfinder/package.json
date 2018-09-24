@@ -1,13 +1,32 @@
 {
-  "author": "Spotify",
-  "name": "web-api-auth-examples",
-  "description": "Basic examples of the Spotify authorization flows through OAuth 2",
-  "version": "0.0.2",
+  "name": "gigfinder",
+  "version": "1.0.0",
+  "description": "find when the artists you listen to are playing near you",
+  "main": "index.js",
   "dependencies": {
+    "ejs": "^2.5.9",
+    "express": "^4.16.3",
+    "request": "^2.85.0",
+    "tape": "^4.9.0"
+  },
+  "devDependencies": {
     "cookie-parser": "1.3.2",
     "express": "~4.16.0",
     "cors": "^2.8.4",
     "querystring": "~0.2.0",
     "request": "~2.83.0"
-  }
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PetitSamuel/playlistToGigs"
+  },
+  "keywords": [
+    "node, express, spotify, ticketmaster"
+  ],
+  "author": "Samuel Petit",
+  "license": "ISC",
+  "homepage": "https://github.com/PetitSamuel/playlistToGigs#readme"
 }
