@@ -1,30 +1,46 @@
-# node-js-template
+# Spotify to Gigs webapp
 
-A barebones Node.js app using [Express 4](http://expressjs.com/).
-
-This application supports the [Getting Started with Node on Heroku](https://devcenter.heroku.com/articles/getting-started-with-nodejs) article - check it out.
+A webapp Node.js app using [Express 4](http://expressjs.com/).
+It allows a user to login into his spotify account, will load the (public) playlists and enable that user to load
+the artists from their playlists and check when the artists from that playlist are playing live.
 
 ## Running Locally
 
-Make sure you have [Node.js](http://nodejs.org/) and the [Heroku CLI](https://cli.heroku.com/) installed.
+Make sure you have [Node.js](http://nodejs.org/)
 
 ```sh
-$ git clone git@github.com:jomaoppa/node-js-template.git # or clone your own fork
-$ cd node-js-template
+$ git clone git@github.com:PetitSamuel/playlistToGigs.git # or clone your own fork
+$ cd playlistToGigs
 $ npm install
 $ npm start
 ```
 
 Your app should now be running on [localhost:5000](http://localhost:5000/).
 
-## Deploying to Heroku
+## Setting up the Spotify API:
+
+You will need to create a spotify application in order to get a client id
 
 ```
-$ heroku create
-$ git push heroku master
-$ heroku open
+https://developer.spotify.com/dashboard/login
 ```
-or
 
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+Once you have a client id, add that to :
 
+```
+var client_id = 'ADD_CLIENT_ID'; // Your client id
+```
+
+You will then want to click on that application and add a redirect uri, for developpement add:
+```
+http://localhost:5000
+```
+
+## Setting up the TicketMaster API:
+
+Create a ticket master developper account and get the client API key that you are given, then add it to the line:
+(https://developer.ticketmaster.com/)
+```
+var key = 'apikey=YOUR_API_KEY' // replace to
+var key = 'apikey=abc123'
+```

@@ -1,9 +1,14 @@
 <!doctype html>
 <html>
-<head>
-  <title>Example of the Implicit Grant flow with Spotify</title>
-  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-  <style type="text/css">
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<style type="text/css">
+  #header-global {
+    text-align: center;
+    vertical-align: middle;
+  }
+  #login-button {
+    text-align: center;
+  }
   #login, #loggedin {
     display: none;
   }
@@ -13,63 +18,9 @@
     white-space: nowrap;
     width: 500px;
   }
-  #dialog {display: none;}
-  </style>
-</head>
-
-<body>
-  <div class="container">
-    <div id="login">
-      <h1>This is an example of the Implicit Grant flow</h1>
-      <button id="login-button" class="btn btn-primary">Log in with Spotify</button>
-    </div>
-    <div id="loggedin">
-      <div id="user-profile">
-      </div>
-      <div id="oauth">
-      </div>
-    </div>
-  </div>
-
-  <script id="user-profile-template" type="text/x-handlebars-template">
-    <h1>Logged in as {{display_name}}</h1>
-    <h1>{{access_token}}</h1>
-    <div class="media">
-      <div class="pull-left">
-        <img class="media-object" width="150" src="{{images.0.url}}" />
-      </div>
-      <div class="media-body">
-        <dl class="dl-horizontal">
-          <dt>Display name</dt><dd class="clearfix">{{display_name}}</dd>
-          <dt>Id</dt><dd>{{id}}</dd>
-          <dt>Email</dt><dd>{{email}}</dd>
-          <dt>Spotify URI</dt><dd><a href="{{external_urls.spotify}}">{{external_urls.spotify}}</a></dd>
-          <dt>Link</dt><dd><a href="{{href}}">{{href}}</a></dd>
-          <dt>Profile Image</dt><dd class="clearfix"><a href="{{images.0.url}}">{{images.0.url}}</a></dd>
-          <dt>Country</dt><dd>{{country}}</dd>
-        </dl>
-      </div>
-    </div>
-    <h3 id="playlist-table-header">Your playlists</h3>
-    <table id="playlist-table">
-      <thead>
-        <tr>
-          <th>Playlist Name</th>
-          <th>Nb of tracks</th>
-          <th>Playlist ID</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
-    <div id="findGigs" class="findGigs">
-      City(optional)<input type="text" id="city" name="city">
-      <select id="selector-artist" class="selector-artist">
-      </select>
-      <button id="search-gig" class="btn btn-primary">Find gigs!</button>
-    </div>
-  </script>
-  <style style="text/css">
+  #dialog {
+    display: none;
+  }
   #playlist-table {
     width:100%;
     border: 1px solid #ddd;
@@ -97,14 +48,78 @@
     background-color: #4CAF50;
     color: white;
   }
-  table {
-  border-spacing: 50px 0;
+  button {
+    align-self: auto;
   }
-
+  table {
+    border-spacing: 50px 0;
+  }
   td {
     padding: 10px 0;
   }
-  </style>
+</style>
+<head>
+  <title>Spotify to gigs!</title>
+</head>
+<h2 id="header-global">Find out when your favorite artists are playing near you!</h2>
+<body>
+  <div class="container">
+    <div id="login">
+      <h3>Start by login into your spotify account:</h3>
+      <div id="login-button">
+      <button class="btn btn-primary">Log in with Spotify!</button>
+      </div>
+    </div>
+    <div id="loggedin">
+      <div id="user-profile">
+      </div>
+      <div id="oauth">
+      </div>
+    </div>
+  </div>
+
+  <script id="user-profile-template" type="text/x-handlebars-template">
+    <h1>Welcome {{display_name}}!</h1>
+    <h3 id="playlist-table-header">Your playlists</h3>
+    <table id="playlist-table">
+      <thead>
+        <tr>
+          <th>Playlist Name</th>
+          <th>Nb of tracks</th>
+          <th>Playlist ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- filled by js -->
+      </tbody>
+    </table>
+
+    <div id="findGigs" class="findGigs">
+      City(optional)<input type="text" id="city" name="city">
+      <select id="selector-artist" class="selector-artist">
+      </select>
+      <button id="search-gig" class="btn btn-primary">Find gigs!</button>
+    </div>
+
+<!-- Popup, triggered by js/jquery -->
+    <div id="dialog" title="">
+      <table id="popup-gigs-table">
+        <thead>
+        <tr>
+          <th> Event name </th>
+          <th> Artists performing </th>
+          <th> Venue </th>
+          <th> Date </th>
+          <th> Status </th>
+          <th> Tickets </th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </script>
+
   <script id="oauth-template" type="text/x-handlebars-template">
     <h2>oAuth info</h2>
     <dl class="dl-horizontal">
@@ -182,6 +197,7 @@
             $('#login').hide();
             $('#findGigs').hide();
             $('#loggedin').show();
+            // get the first 50 playlists
             $.ajax({
               url: 'https://api.spotify.com/v1/me/playlists?limit=50',
               headers: {
@@ -191,21 +207,26 @@
                 if(response.items === 0){
                   alert('No public playlists to display!');
                 }
+                // append to table
                 var rowsAsHtml = '';
                 $.each(response.items, function (key, value) {
                   rowsAsHtml += '<tr><td>' + value.name + '</td><td>'
                   + value.tracks.total + '</td><td>' + value.id + '</td></tr>';
                 });
                 $('#playlist-table').append(rowsAsHtml);
+
+                // loads tracks and extract artists on button click
                 $(document).on("click", "#playlist-table tbody tr", function() {
                   allArtists = [];
                   var tracksCount = parseInt(this.cells[1].innerText, 10);
                   let offset = 0;
                   do {
+                    // get 100 tracks at a time, keep going until all tracks are loaded
                     getTracksData(this.cells[2].innerText, offset, function (data, isFinished){
                       for(let i = 0; i < data.length; i++){
                         let track = data[i].track;
                         for(let j = 0; j < track.artists.length; j++){
+                          // store artists / keep track of amount of tracks per artist
                           let artist = track.artists[j];
                           if(allArtists[artist.id] == null){
                             allArtists[artist.id] = {
@@ -217,13 +238,14 @@
                           }
                         }
                       }
-                      //if(typeof allArtists[])
+                      // executed when all tracks are loaded
                       if(isFinished){
-                        //var $dropdown = $("#findGigs");
+                        // sort array by name
+                        let sortedArtists = sortAssocArrayByName(allArtists);
+                        // append artiststo dropdown selector
                         var html = '';
-                        //<option value="7782">CLARK</option>
-                        for(var index in allArtists){
-                          html += '<option value="' + allArtists[index].name + '">' + allArtists[index].name + '</option>';
+                        for(var index in sortedArtists){
+                          html += '<option value="' + sortedArtists[index].name + '">' + sortedArtists[index].name + '</option>';
                         }
                         $('#selector-artist').empty().append(html);
                         $('#findGigs').show();
@@ -232,6 +254,7 @@
                     offset += 100;
                     } while (offset <= tracksCount);
                   });
+                  // creates a request to the ticketmaster API
                   $(document).on("click", "#search-gig", function() {
                     getGigsByArtistAndCity(
                       $('#selector-artist').val(),
@@ -253,8 +276,8 @@
 
         document.getElementById('login-button').addEventListener('click', function() {
 
-          var client_id = '7108babcf17b440db6d26681af5b6347'; // Your client id
-          var redirect_uri = 'https://spotify-to-gig.herokuapp.com/'; // Your redirect uri
+          var client_id = 'YOUR_CLIENT_ID'; // Your client id
+          var redirect_uri = 'http://localhost:5000'; // Your redirect uri
 
           var state = generateRandomString(16);
 
@@ -271,6 +294,8 @@
           window.location = url;
         }, false);
       }
+
+      // get 100 tracks from spotify and store them on success
       function getTracksData (playlistID, offset = 0, callback) {
         var params = getHashParams();
         var access_token = params.access_token;
@@ -291,11 +316,12 @@
           }
         });
       }
-      //.v2.events.get&format=json&keyword=Panic! At The Disco&radius=100&unit=km&city=Dublin
+
+      // calls the ticketmaster endpoint to get gigs by artist name & optionally by city within a 100km range
       function getGigsByArtistAndCity (artist, city){
         var url = 'https://app.ticketmaster.com/discovery/v2/events.json?&format=json&';
         var options = '&keyword=' + artist + '&radius=100&unit=km' + (city == '' ? '' : '&city=' + city);
-        var key = 'apikey=2vAXpYp6i5eqpHG3IRfDBSfK9GWidlhM'
+        var key = 'apikey=YOUR_API_KEY'
 
         $.ajax({
           url: url + key + options,
@@ -315,6 +341,8 @@
               show : "blind",
               hide : "blind"
             });
+
+            //append gigs to popup
             let html = '';
             for(let i = 0; i < events.length; i++){
               try {
@@ -341,10 +369,12 @@
                 html += '<tr><td>' + gigName + '</td><td>' + artistsPerforming + '</td><td>' +
                   venues + '</td><td>' + date + '</td><td>' + status + '</td><td>' +
                   '<button id="ticketRedirect" class="btn btn-primary" onClick="window.open(\'' + linkToTickets + '\',\'_blank\')">Buy tickets</button> ';
+                // easy way to handle returned data with missing information
               } catch (e){
                 continue;
               }
             }
+            // remove previously shown gigs and append new ones
             $('#popup-gigs-table tbody tr').remove();
             $('#popup-gigs-table').append(html);
             $("#dialog").dialog("open");
@@ -354,22 +384,18 @@
           }
         });
       }
+      // takes an array which uses an id as index and sorts it by name
+    function sortAssocArrayByName(obj) {
+      // push values to a new array
+      var keys = []; for(var key in obj) keys.push(obj[key]);
+      // return sorted array
+      return keys.sort(function(a,b){
+        if(a.name < b.name) return -1;
+        if(a.name > b.name) return 1;
+        return 0;
+      });
+    }
     })();
     </script>
-    <div id="dialog" title="">
-      <table id="popup-gigs-table">
-        <thead>
-          <tr>
-            <th> Event name </th>
-            <th> Artists performing </th>
-            <th> Venue </th>
-            <th> Date </th>
-            <th> Status </th>
-            <th> Tickets </th>
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
-    </div>
-    </html>
+  </body>
+</html>

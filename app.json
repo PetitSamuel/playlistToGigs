@@ -1,5 +1,5 @@
 {
-  "name": "Node.js template",
-  "description": "A barebones Node.js app using Express 4",
-  "keywords": ["node", "express", "heroku"]
+  "name": "gigfinder", 
+  "description": "A webapp which allows a user to sign into their spotify account, load artists from their playlists and look for their upcoming events",
+  "keywords": ["node", "express, spotify"]
 }

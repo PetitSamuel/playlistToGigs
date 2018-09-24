@@ -1,7 +1,7 @@
 {
-  "name": "node-js-template",
+  "name": "gigfinder",
   "version": "1.0.0",
-  "description": "joma's template",
+  "description": "find when the artists you listen to are playing near you",
   "main": "index.js",
   "dependencies": {
     "ejs": "^2.5.9",
@@ -17,20 +17,16 @@
     "request": "~2.83.0"
   },
   "scripts": {
-    "start": "node index.js",
-    "test": "node test.js"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jomaoppa/node-js-template.git"
+    "url": "git+https://github.com/PetitSamuel/playlistToGigs"
   },
   "keywords": [
-    "node"
+    "node, express, spotify, ticketmaster"
   ],
-  "author": "Joma",
+  "author": "Samuel Petit",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/jomaoppa/node-js-template/issues"
-  },
-  "homepage": "https://github.com/jomaoppa/node-js-template#readme"
+  "homepage": "https://github.com/PetitSamuel/playlistToGigs#readme"
 }
