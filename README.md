@@ -1,6 +1,6 @@
 # Spotify to Gigs webapp
 
-A webapp Node.js app using [Express 4](http://expressjs.com/).
+A Node.js app using [Express 4](http://expressjs.com/).
 It allows a user to login into his spotify account, will load the (public) playlists and enable that user to load
 the artists from their playlists and check when the artists from that playlist are playing live.
 
