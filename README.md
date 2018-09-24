@@ -15,6 +15,16 @@ $ npm install
 $ npm start
 ```
 
+## with docker
+
+Simply run the following commands:
+```sh
+$ git clone git@github.com:PetitSamuel/playlistToGigs.git # or clone your own fork
+$ cd playlistToGigs
+$ git checkout dockerized
+$ docker-compose up
+```
+
 Your app should now be running on [localhost:5000](http://localhost:5000/).
 
 ## Setting up the Spotify API:
