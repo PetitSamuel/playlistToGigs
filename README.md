@@ -21,6 +21,8 @@ Simply run the following commands:
 ```sh
 $ git clone git@github.com:PetitSamuel/playlistToGigs.git # or clone your own fork
 $ cd playlistToGigs
+$ git checkout dockerized
+$ npm install
 $ docker-compose up
 ```
 
