@@ -276,7 +276,7 @@
 
         document.getElementById('login-button').addEventListener('click', function() {
 
-          var client_id = 'YOUR_CLIENT_ID'; // Your client id
+          var client_id = '7108babcf17b440db6d26681af5b6347'; // Your client id
           var redirect_uri = 'http://localhost:5000'; // Your redirect uri
 
           var state = generateRandomString(16);
@@ -321,7 +321,7 @@
       function getGigsByArtistAndCity (artist, city){
         var url = 'https://app.ticketmaster.com/discovery/v2/events.json?&format=json&';
         var options = '&keyword=' + artist + '&radius=100&unit=km' + (city == '' ? '' : '&city=' + city);
-        var key = 'apikey=YOUR_API_KEY'
+        var key = 'apikey=dRAKo2EO1eEwGlp57uwSPyRiLanz4Kdl'
 
         $.ajax({
           url: url + key + options,
